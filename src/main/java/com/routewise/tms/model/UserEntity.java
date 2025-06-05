@@ -50,6 +50,9 @@ public class UserEntity {
     @Column(name = "created_at", updatable = false)
     private java.sql.Timestamp createdAt;
 
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = new java.sql.Timestamp(System.currentTimeMillis());

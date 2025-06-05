@@ -41,6 +41,10 @@ public class Company {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
+
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();

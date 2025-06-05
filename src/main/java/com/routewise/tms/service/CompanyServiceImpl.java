@@ -3,8 +3,12 @@ package com.routewise.tms.service;
 import com.routewise.tms.dto.CompanyDto;
 import com.routewise.tms.exception.ResourceNotFoundException;
 import com.routewise.tms.factory.CompanyFactory;
+import com.routewise.tms.model.Client;
 import com.routewise.tms.model.Company;
+import com.routewise.tms.model.UserEntity;
+import com.routewise.tms.repository.ClientRepository;
 import com.routewise.tms.repository.CompanyRepository;
+import com.routewise.tms.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +20,8 @@ import java.util.stream.Collectors;
 public class CompanyServiceImpl implements ICompanyService{
     private final CompanyRepository companyRepository;
     private final CompanyFactory companyFactory;
+    private final ClientRepository clientRepository;
+    private final UserRepository userRepository;
 
     @Override
     public CompanyDto createCompany(CompanyDto dto) {
@@ -53,11 +59,27 @@ public class CompanyServiceImpl implements ICompanyService{
     }
 
     @Override
-    public void deleteCompany(Integer id) {
-        if (!companyRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Company not found");
+    public void deleteCompany(Integer companyId) {
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found"));
+
+        // 1. Bağlı Clients soft-delete (örnek)
+        List<Client> clients = clientRepository.findAllByCompanyAndIsDeletedFalse(company);
+        for (Client client : clients) {
+            client.setIsDeleted(true);
+            clientRepository.save(client);
         }
-        companyRepository.deleteById(id);
+
+        // 2. Bağlı Users soft-delete (örnek)
+        List<UserEntity> users = userRepository.findAllByCompanyAndIsDeletedFalse(company);
+        for (UserEntity user : users) {
+            user.setIsDeleted(true);
+            userRepository.save(user);
+        }
+
+        // 3. Company soft-delete
+        company.setIsDeleted(true);
+        companyRepository.save(company);
     }
 
     // Mapping metodu
