@@ -67,6 +67,7 @@ public class EmployeeServiceImpl implements IEmployeeService {
 
     @Override
     public void deleteEmployee(Integer employeeId) {
+        // Design Pattern: Repository Pattern + Soft Delete (Business Logic)
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found"));
         employee.setIsDeleted(true);
