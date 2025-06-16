@@ -26,6 +26,7 @@ import {
   Car,
   Receipt
 } from 'lucide-react';
+import ThemeToggle from './ThemeToggle';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -37,10 +38,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [vehiclesExpanded, setVehiclesExpanded] = useState(false);
   const [employeesExpanded, setEmployeesExpanded] = useState(false);
+  const [ordersExpanded, setOrdersExpanded] = useState(false);
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
-    { name: 'Orders', href: '/orders', icon: Package },
     { name: 'Routes', href: '/routes', icon: Map },
     { name: 'Clients', href: '/clients', icon: Building },
     { name: 'Live Tracking', href: '/tracking', icon: Map },
@@ -50,6 +51,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     { name: 'Vehicles', href: '/vehicles', icon: Truck },
     { name: 'Vehicle Types', href: '/vehicle-types', icon: Car },
     { name: 'Vehicle Expenses', href: '/vehicle-expenses', icon: Receipt },
+  ];
+
+  const orderSubItems = [
+    { name: 'Orders', href: '/orders', icon: Package },
+    { name: 'Order Items', href: '/order-items', icon: Package },
+    { name: 'Order Routes', href: '/order-routes', icon: Map },
   ];
 
   const employeeSubItems = [
@@ -69,12 +76,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     return vehicleSubItems.some(item => isActive(item.href));
   };
 
+  const isOrdersSectionActive = () => {
+    return orderSubItems.some(item => isActive(item.href));
+  };
+
   const isEmployeesSectionActive = () => {
     return employeeSubItems.some(item => isActive(item.href));
   };
 
   // Auto-expand sections if any sub-item is active
   React.useEffect(() => {
+    if (isOrdersSectionActive()) {
+      setOrdersExpanded(true);
+    }
     if (isVehiclesSectionActive()) {
       setVehiclesExpanded(true);
     }
@@ -98,7 +112,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   };
 
   return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex">
         {/* Mobile sidebar backdrop */}
         {sidebarOpen && (
             <div
@@ -108,10 +122,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         )}
 
         {/* Sidebar */}
-        <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white/80 backdrop-blur-md shadow-xl transform transition-transform duration-300 ease-in-out ${
+        <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white/80 dark:bg-slate-900/90 backdrop-blur-md shadow-xl transform transition-transform duration-300 ease-in-out ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0 lg:static lg:inset-0`}>
-          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
                 <Truck className="w-5 h-5 text-white" />
@@ -140,7 +154,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       className={`flex items-center px-3 py-3 mb-1 rounded-xl text-sm font-medium transition-all duration-200 ${
                           active
                               ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
-                              : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                              : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
                       }`}
                       onClick={() => setSidebarOpen(false)}
                   >
@@ -150,6 +164,52 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               );
             })}
 
+            {/* Orders Section with Dropdown */}
+            <div className="mb-1">
+              <button
+                  onClick={() => setOrdersExpanded(!ordersExpanded)}
+                  className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      isOrdersSectionActive()
+                          ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
+                  }`}
+              >
+                <div className="flex items-center">
+                  <Package className={`w-5 h-5 mr-3 ${isOrdersSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                  Orders
+                </div>
+                {ordersExpanded ? (
+                    <ChevronDown className={`w-4 h-4 ${isOrdersSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                ) : (
+                    <ChevronRight className={`w-4 h-4 ${isOrdersSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                )}
+              </button>
+
+              {/* Orders Submenu */}
+              {ordersExpanded && (
+                  <div className="ml-6 mt-1 space-y-1">
+                    {orderSubItems.map((subItem) => {
+                      const active = isActive(subItem.href);
+                      return (
+                          <Link
+                              key={subItem.name}
+                              to={subItem.href}
+                              className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                  active
+                                      ? 'bg-blue-100 text-blue-700'
+                                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                              }`}
+                              onClick={() => setSidebarOpen(false)}
+                          >
+                            <subItem.icon className={`w-4 h-4 mr-3 ${active ? 'text-blue-700' : 'text-gray-400'}`} />
+                            {subItem.name}
+                          </Link>
+                      );
+                    })}
+                  </div>
+              )}
+            </div>
+
             {/* Employees Section with Dropdown */}
             <div className="mb-1">
               <button
@@ -157,7 +217,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                       isEmployeesSectionActive()
                           ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
-                          : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
                   }`}
               >
                 <div className="flex items-center">
@@ -203,7 +263,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                       isVehiclesSectionActive()
                           ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
-                          : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
                   }`}
               >
                 <div className="flex items-center">
@@ -247,7 +307,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         {/* Main content */}
         <div className="flex-1 flex flex-col">
           {/* Top bar */}
-          <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-200 h-16 flex items-center justify-between px-6">
+          <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm border-b border-gray-200 dark:border-gray-700 h-16 flex items-center justify-between px-6">
             <Button
                 variant="ghost"
                 size="sm"
@@ -258,6 +318,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </Button>
 
             <div className="flex items-center space-x-4">
+              <ThemeToggle />
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/notifications">
                   <Bell className="w-5 h-5" />
@@ -274,11 +335,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     </Avatar>
                     <div className="text-left hidden sm:block">
                       <p className="text-sm font-medium">{getFullName()}</p>
-                      <p className="text-xs text-gray-500">{user?.roleName}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{user?.roleName}</p>
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 z-[9999] bg-white border shadow-lg">
+                <DropdownMenuContent align="end" className="w-48 z-[9999] bg-white dark:bg-slate-800 border shadow-lg">
                   <DropdownMenuItem asChild>
                     <Link to="/settings" className="flex items-center">
                       <Settings className="w-4 h-4 mr-2" />

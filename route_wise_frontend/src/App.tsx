@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -14,6 +15,8 @@ import ManagerDashboard from "./pages/ManagerDashboard";
 import DriverDashboard from "./pages/DriverDashboard";
 import AccountantDashboard from "./pages/AccountantDashboard";
 import Orders from "./pages/Orders";
+import OrderItems from "./pages/OrderItems";
+import OrderRoutes from "./pages/OrderRoutes";
 import Vehicles from "./pages/Vehicles";
 import VehicleTypes from "./pages/VehicleTypes";
 import VehicleExpenses from "./pages/VehicleExpenses";
@@ -38,8 +41,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <HotToaster position="top-right" />
-      <AuthProvider>
-        <BrowserRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -54,6 +58,20 @@ const App = () => (
               <ProtectedRoute>
                 <DashboardLayout>
                   <Orders />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/order-items" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <OrderItems />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/order-routes" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <OrderRoutes />
                 </DashboardLayout>
               </ProtectedRoute>
             } />
@@ -164,8 +182,9 @@ const App = () => (
             } />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

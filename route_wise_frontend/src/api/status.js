@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:7070/api/employees";
+const API_URL = "http://localhost:7070/api/statuses";
 
 // Get auth token and user info from localStorage
 const getAuthToken = () => {
@@ -10,8 +10,8 @@ const getUserInfo = () => {
     return JSON.parse(localStorage.getItem('routewise_user') || '{}');
 };
 
-// Get all employees
-export async function getAllEmployees() {
+// Get all statuses
+export async function getAllStatuses() {
     const response = await fetch(API_URL, {
         method: "GET",
         headers: {
@@ -22,13 +22,13 @@ export async function getAllEmployees() {
 
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch employees");
+        throw new Error(errorData.message || "Failed to fetch statuses");
     }
     return response.json();
 }
 
-// Get employee by ID
-export async function getEmployeeById(id) {
+// Get status by ID
+export async function getStatusById(id) {
     const response = await fetch(`${API_URL}/${id}`, {
         method: "GET",
         headers: {
@@ -39,14 +39,14 @@ export async function getEmployeeById(id) {
 
     if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch employee");
+        throw new Error(errorData.message || "Failed to fetch status");
     }
     return response.json();
 }
 
-// Create new employee
-export async function createEmployee(employeeData) {
-    console.log('Creating employee with data:', employeeData);
+// Create new status (admin only)
+export async function createStatus(statusData) {
+    console.log('Creating status with data:', statusData);
 
     const response = await fetch(API_URL, {
         method: "POST",
@@ -54,7 +54,7 @@ export async function createEmployee(employeeData) {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${getAuthToken()}`
         },
-        body: JSON.stringify(employeeData)
+        body: JSON.stringify(statusData)
     });
 
     if (!response.ok) {
@@ -64,15 +64,15 @@ export async function createEmployee(employeeData) {
         } catch (e) {
             errorData = { message: `HTTP ${response.status}: ${response.statusText}` };
         }
-        console.error('Create employee error:', errorData);
-        throw new Error(errorData.message || "Failed to create employee");
+        console.error('Create status error:', errorData);
+        throw new Error(errorData.message || "Failed to create status");
     }
     return response.json();
 }
 
-// Update employee
-export async function updateEmployee(id, employeeData) {
-    console.log('Updating employee with data:', employeeData);
+// Update status (admin only)
+export async function updateStatus(id, statusData) {
+    console.log('Updating status with data:', statusData);
 
     const response = await fetch(`${API_URL}/${id}`, {
         method: "PUT",
@@ -80,19 +80,19 @@ export async function updateEmployee(id, employeeData) {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${getAuthToken()}`
         },
-        body: JSON.stringify(employeeData)
+        body: JSON.stringify(statusData)
     });
 
     if (!response.ok) {
         const errorData = await response.json();
-        console.error('Update employee error:', errorData);
-        throw new Error(errorData.message || "Failed to update employee");
+        console.error('Update status error:', errorData);
+        throw new Error(errorData.message || "Failed to update status");
     }
     return response.json();
 }
 
-// Delete employee
-export async function deleteEmployee(id) {
+// Delete status (admin only)
+export async function deleteStatus(id) {
     const response = await fetch(`${API_URL}/${id}`, {
         method: "DELETE",
         headers: {
@@ -103,8 +103,8 @@ export async function deleteEmployee(id) {
 
     if (!response.ok) {
         const errorData = await response.json();
-        console.error('Delete employee error:', errorData);
-        throw new Error(errorData.message || "Failed to delete employee");
+        console.error('Delete status error:', errorData);
+        throw new Error(errorData.message || "Failed to delete status");
     }
     return true;
 } 
