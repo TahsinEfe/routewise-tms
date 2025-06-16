@@ -1,6 +1,7 @@
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster as HotToaster } from "react-hot-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -8,8 +9,16 @@ import { AuthProvider } from "./contexts/AuthContext";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import ManagerDashboard from "./pages/ManagerDashboard";
+import DriverDashboard from "./pages/DriverDashboard";
+import AccountantDashboard from "./pages/AccountantDashboard";
 import Orders from "./pages/Orders";
 import Vehicles from "./pages/Vehicles";
+import VehicleTypes from "./pages/VehicleTypes";
+import VehicleExpenses from "./pages/VehicleExpenses";
+import EmployeeTypes from "./pages/EmployeeTypes";
+import SalaryComponents from "./pages/SalaryComponents";
 import RoutesPage from "./pages/Routes";
 import Employees from "./pages/Employees";
 import Clients from "./pages/Clients";
@@ -18,6 +27,7 @@ import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import ProtectedRoute from "./components/ProtectedRoute";
 import DashboardLayout from "./components/DashboardLayout";
+import RoleBasedDashboard from "./components/RoleBasedDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +37,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <HotToaster position="top-right" />
       <AuthProvider>
         <BrowserRouter>
           <Routes>
@@ -35,7 +46,7 @@ const App = () => (
             <Route path="/" element={
               <ProtectedRoute>
                 <DashboardLayout>
-                  <Dashboard />
+                  <RoleBasedDashboard />
                 </DashboardLayout>
               </ProtectedRoute>
             } />
@@ -53,6 +64,20 @@ const App = () => (
                 </DashboardLayout>
               </ProtectedRoute>
             } />
+            <Route path="/vehicle-types" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <VehicleTypes />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/vehicle-expenses" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <VehicleExpenses />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
             <Route path="/routes" element={
               <ProtectedRoute>
                 <DashboardLayout>
@@ -64,6 +89,20 @@ const App = () => (
               <ProtectedRoute>
                 <DashboardLayout>
                   <Employees />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/employee-types" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <EmployeeTypes />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/salary-components" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <SalaryComponents />
                 </DashboardLayout>
               </ProtectedRoute>
             } />
@@ -92,6 +131,34 @@ const App = () => (
               <ProtectedRoute>
                 <DashboardLayout>
                   <Settings />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin-dashboard" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <AdminDashboard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/manager-dashboard" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <ManagerDashboard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/driver-dashboard" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <DriverDashboard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/accountant-dashboard" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <AccountantDashboard />
                 </DashboardLayout>
               </ProtectedRoute>
             } />

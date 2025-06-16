@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,74 +15,116 @@ import {
   MapPin,
   Calendar,
   Star,
-  Truck
+  Truck,
+  Edit,
+  Trash2,
+  MoreHorizontal
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { getAllEmployees, deleteEmployee } from '../api/employee';
+import EmployeeModal from '../components/EmployeeModal';
+import { useToast } from '@/hooks/use-toast';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const Employees = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
 
-  const employees = [
-    {
-      id: 'EMP-001',
-      name: 'John Smith',
-      role: 'Senior Driver',
-      email: 'john.smith@routewise.com',
-      phone: '+1 (555) 123-4567',
-      location: 'New York, NY',
-      status: 'Active',
-      experience: '5 years',
-      rating: 4.8,
-      completedDeliveries: 1247,
-      currentVehicle: 'TR-001',
-      joinDate: '2019-03-15',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face'
-    },
-    {
-      id: 'EMP-002',
-      name: 'Sarah Johnson',
-      role: 'Driver',
-      email: 'sarah.johnson@routewise.com',
-      phone: '+1 (555) 234-5678',
-      location: 'Philadelphia, PA',
-      status: 'On Route',
-      experience: '3 years',
-      rating: 4.9,
-      completedDeliveries: 892,
-      currentVehicle: 'TR-003',
-      joinDate: '2021-07-22',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612e5-15/user/100x100?crop=face'
-    },
-    {
-      id: 'EMP-003',
-      name: 'Mike Wilson',
-      role: 'Fleet Supervisor',
-      email: 'mike.wilson@routewise.com',
-      phone: '+1 (555) 345-6789',
-      location: 'Boston, MA',
-      status: 'Available',
-      experience: '8 years',
-      rating: 4.7,
-      completedDeliveries: 2156,
-      currentVehicle: 'TR-005',
-      joinDate: '2016-11-08',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face'
-    },
-    {
-      id: 'EMP-004',
-      name: 'Emily Davis',
-      role: 'Driver',
-      email: 'emily.davis@routewise.com',
-      phone: '+1 (555) 456-7890',
-      location: 'Washington, DC',
-      status: 'Off Duty',
-      experience: '2 years',
-      rating: 4.6,
-      completedDeliveries: 567,
-      currentVehicle: 'Unassigned',
-      joinDate: '2022-04-10',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face'
+  // Check if user has admin or manager role
+  const canManageEmployees = user?.roleName?.toLowerCase() === 'admin' || user?.roleName?.toLowerCase() === 'manager';
+
+  // Fetch employees from API
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+      const data = await getAllEmployees();
+      setEmployees(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch employees",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  // Handle employee deletion
+  const handleDeleteEmployee = async (employeeId) => {
+    if (!canManageEmployees) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to delete employees",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (window.confirm('Are you sure you want to delete this employee?')) {
+      try {
+        await deleteEmployee(employeeId);
+        toast({
+          title: "Success",
+          description: "Employee deleted successfully",
+        });
+        fetchEmployees(); // Refresh the list
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete employee",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  // Handle edit employee
+  const handleEditEmployee = (employee) => {
+    if (!canManageEmployees) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to edit employees",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSelectedEmployee(employee);
+    setIsModalOpen(true);
+  };
+
+  // Handle add new employee
+  const handleAddEmployee = () => {
+    if (!canManageEmployees) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to add employees",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSelectedEmployee(null);
+    setIsModalOpen(true);
+  };
+
+  // Filter employees based on search term
+  const filteredEmployees = employees.filter(employee =>
+    `${employee.firstName} ${employee.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    employee.phone.includes(searchTerm)
+  );
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -107,10 +149,15 @@ const Employees = () => {
           <h1 className="text-3xl font-bold text-gray-900">Employee Management</h1>
           <p className="text-gray-600 mt-2">Manage drivers and staff members</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Employee
-        </Button>
+        {canManageEmployees && (
+          <Button 
+            onClick={handleAddEmployee}
+            className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Employee
+          </Button>
+        )}
       </div>
 
       {/* Stats */}
@@ -122,8 +169,8 @@ const Employees = () => {
                 <Users className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Active</p>
-                <p className="text-2xl font-bold">3</p>
+                <p className="text-sm text-gray-600">Total Employees</p>
+                <p className="text-2xl font-bold">{employees.length}</p>
               </div>
             </div>
           </CardContent>
@@ -135,8 +182,8 @@ const Employees = () => {
                 <Truck className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">On Route</p>
-                <p className="text-2xl font-bold">1</p>
+                <p className="text-sm text-gray-600">Drivers</p>
+                <p className="text-2xl font-bold">{employees.filter(emp => emp.employeeType?.name?.toLowerCase() === 'driver').length}</p>
               </div>
             </div>
           </CardContent>
@@ -148,8 +195,8 @@ const Employees = () => {
                 <Users className="w-5 h-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Available</p>
-                <p className="text-2xl font-bold">1</p>
+                <p className="text-sm text-gray-600">Managers</p>
+                <p className="text-2xl font-bold">{employees.filter(emp => emp.employeeType?.name?.toLowerCase() === 'manager').length}</p>
               </div>
             </div>
           </CardContent>
@@ -161,8 +208,8 @@ const Employees = () => {
                 <Users className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Total Staff</p>
-                <p className="text-2xl font-bold">4</p>
+                <p className="text-sm text-gray-600">Admins</p>
+                <p className="text-2xl font-bold">{employees.filter(emp => emp.employeeType?.name?.toLowerCase() === 'admin').length}</p>
               </div>
             </div>
           </CardContent>
@@ -193,72 +240,111 @@ const Employees = () => {
         </CardContent>
       </Card>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center py-8">
+          <div className="text-gray-500">Loading employees...</div>
+        </div>
+      )}
+
       {/* Employees Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {employees.map((employee) => (
-          <Card key={employee.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4 mb-4">
-                <Avatar className="w-16 h-16">
-                  <AvatarImage src={employee.avatar} />
-                  <AvatarFallback>{employee.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <h3 className="font-semibold text-lg">{employee.name}</h3>
-                      <p className="text-gray-600">{employee.role}</p>
-                      <p className="text-sm text-gray-500">{employee.id}</p>
+      {!loading && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredEmployees.map((employee) => (
+            <Card key={employee.employeeId} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4 mb-4">
+                  <Avatar className="w-16 h-16">
+                    <AvatarImage src={employee.avatar} />
+                    <AvatarFallback>{`${employee.firstName} ${employee.lastName}`.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h3 className="font-semibold text-lg">{`${employee.firstName} ${employee.lastName}`}</h3>
+                        <p className="text-gray-600">{employee.employeeType?.name || 'N/A'}</p>
+                        <p className="text-sm text-gray-500">ID: {employee.employeeId}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-green-100 text-green-800">
+                          Active
+                        </Badge>
+                        {canManageEmployees && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              <DropdownMenuItem onClick={() => handleEditEmployee(employee)}>
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDeleteEmployee(employee.employeeId)}
+                                className="text-red-600"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
                     </div>
-                    <Badge className={getStatusColor(employee.status)}>
-                      {employee.status}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-1 mb-2">
-                    <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                    <span className="text-sm font-medium">{employee.rating}</span>
-                    <span className="text-sm text-gray-500">({employee.completedDeliveries} deliveries)</span>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  <span>{employee.email}</span>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-gray-400" />
+                    <span>{employee.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-gray-400" />
+                    <span>{employee.phone}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    <span>{employee.address}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-600">Department:</span>
+                    <span>{employee.department?.name || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-600">Hire Date:</span>
+                    <span>{new Date(employee.hireDate).toLocaleDateString()}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <span>{employee.phone}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  <span>{employee.location}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Truck className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600">Vehicle:</span>
-                  <span>{employee.currentVehicle}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600">Experience:</span>
-                  <span>{employee.experience}</span>
-                </div>
-              </div>
 
-              <div className="flex gap-2 mt-4">
-                <Button variant="outline" size="sm" className="flex-1">
-                  View Profile
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  Assign Task
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <div className="flex gap-2 mt-4">
+                  <Button variant="outline" size="sm" className="flex-1">
+                    View Profile
+                  </Button>
+                  {canManageEmployees && (
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditEmployee(employee)}>
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Employee Modal */}
+      <EmployeeModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        employee={selectedEmployee}
+        onSuccess={fetchEmployees}
+      />
     </div>
   );
 };

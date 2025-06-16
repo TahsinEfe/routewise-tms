@@ -20,7 +20,11 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  ChevronDown,
+  ChevronRight,
+  Car,
+  Receipt
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -31,15 +35,27 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [vehiclesExpanded, setVehiclesExpanded] = useState(false);
+  const [employeesExpanded, setEmployeesExpanded] = useState(false);
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Orders', href: '/orders', icon: Package },
-    { name: 'Vehicles', href: '/vehicles', icon: Truck },
     { name: 'Routes', href: '/routes', icon: Map },
-    { name: 'Employees', href: '/employees', icon: Users },
     { name: 'Clients', href: '/clients', icon: Building },
     { name: 'Live Tracking', href: '/tracking', icon: Map },
+  ];
+
+  const vehicleSubItems = [
+    { name: 'Vehicles', href: '/vehicles', icon: Truck },
+    { name: 'Vehicle Types', href: '/vehicle-types', icon: Car },
+    { name: 'Vehicle Expenses', href: '/vehicle-expenses', icon: Receipt },
+  ];
+
+  const employeeSubItems = [
+    { name: 'All Employees', href: '/employees', icon: Users },
+    { name: 'Employee Types', href: '/employee-types', icon: Settings },
+    { name: 'Salary Components', href: '/salary-components', icon: Receipt },
   ];
 
   const isActive = (href: string) => {
@@ -48,6 +64,24 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     }
     return location.pathname.startsWith(href);
   };
+
+  const isVehiclesSectionActive = () => {
+    return vehicleSubItems.some(item => isActive(item.href));
+  };
+
+  const isEmployeesSectionActive = () => {
+    return employeeSubItems.some(item => isActive(item.href));
+  };
+
+  // Auto-expand sections if any sub-item is active
+  React.useEffect(() => {
+    if (isVehiclesSectionActive()) {
+      setVehiclesExpanded(true);
+    }
+    if (isEmployeesSectionActive()) {
+      setEmployeesExpanded(true);
+    }
+  }, [location.pathname]);
 
   // Kullanıcı adının baş harfleri (AvatarFallback için)
   const getInitials = () => {
@@ -115,6 +149,98 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   </Link>
               );
             })}
+
+            {/* Employees Section with Dropdown */}
+            <div className="mb-1">
+              <button
+                  onClick={() => setEmployeesExpanded(!employeesExpanded)}
+                  className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      isEmployeesSectionActive()
+                          ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
+                          : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                  }`}
+              >
+                <div className="flex items-center">
+                  <Users className={`w-5 h-5 mr-3 ${isEmployeesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                  Employees
+                </div>
+                {employeesExpanded ? (
+                    <ChevronDown className={`w-4 h-4 ${isEmployeesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                ) : (
+                    <ChevronRight className={`w-4 h-4 ${isEmployeesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                )}
+              </button>
+
+              {/* Employees Submenu */}
+              {employeesExpanded && (
+                  <div className="ml-6 mt-1 space-y-1">
+                    {employeeSubItems.map((subItem) => {
+                      const active = isActive(subItem.href);
+                      return (
+                          <Link
+                              key={subItem.name}
+                              to={subItem.href}
+                              className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                  active
+                                      ? 'bg-blue-100 text-blue-700'
+                                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                              }`}
+                              onClick={() => setSidebarOpen(false)}
+                          >
+                            <subItem.icon className={`w-4 h-4 mr-3 ${active ? 'text-blue-700' : 'text-gray-400'}`} />
+                            {subItem.name}
+                          </Link>
+                      );
+                    })}
+                  </div>
+              )}
+            </div>
+
+            {/* Vehicles Section with Dropdown */}
+            <div className="mb-1">
+              <button
+                  onClick={() => setVehiclesExpanded(!vehiclesExpanded)}
+                  className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      isVehiclesSectionActive()
+                          ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
+                          : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                  }`}
+              >
+                <div className="flex items-center">
+                  <Truck className={`w-5 h-5 mr-3 ${isVehiclesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                  Vehicles
+                </div>
+                {vehiclesExpanded ? (
+                    <ChevronDown className={`w-4 h-4 ${isVehiclesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                ) : (
+                    <ChevronRight className={`w-4 h-4 ${isVehiclesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                )}
+              </button>
+
+              {/* Vehicles Submenu */}
+              {vehiclesExpanded && (
+                  <div className="ml-6 mt-1 space-y-1">
+                    {vehicleSubItems.map((subItem) => {
+                      const active = isActive(subItem.href);
+                      return (
+                          <Link
+                              key={subItem.name}
+                              to={subItem.href}
+                              className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                  active
+                                      ? 'bg-blue-100 text-blue-700'
+                                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                              }`}
+                              onClick={() => setSidebarOpen(false)}
+                          >
+                            <subItem.icon className={`w-4 h-4 mr-3 ${active ? 'text-blue-700' : 'text-gray-400'}`} />
+                            {subItem.name}
+                          </Link>
+                      );
+                    })}
+                  </div>
+              )}
+            </div>
           </nav>
         </div>
 
