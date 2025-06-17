@@ -7,11 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Truck, Mail, Lock, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getAllCompanies } from '@/api/company';
+import { companyAPI } from '@/api/company';
 
 // Backend'den gelen objelerin property'leri camelCase olmalı!
 type Role = { roleId: number; roleName: string; description?: string };
-type Company = { companyId: number; companyName: string };
+type Company = { id: number; name: string };
 
 const Register = () => {
   const { register, isLoading } = useAuth();
@@ -43,7 +43,7 @@ const Register = () => {
         });
 
     // Şirketleri çek
-    getAllCompanies()
+    companyAPI.getAll()
         .then(data => setCompanies(Array.isArray(data) ? data : []))
         .catch(e => console.error(e));
   }, []);
@@ -169,8 +169,8 @@ const Register = () => {
                   >
                     <option value="">Select Company</option>
                     {companies.map((company) => (
-                        <option key={company.companyId} value={company.companyId}>
-                          {company.companyName}
+                        <option key={company.id} value={company.id}>
+                          {company.name}
                         </option>
                     ))}
                   </select>

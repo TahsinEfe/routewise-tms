@@ -22,9 +22,16 @@ const SingleOrderMap: React.FC<SingleOrderMapProps> = ({
   const [mapError, setMapError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [loadingMethod, setLoadingMethod] = useState<'callback' | 'direct' | 'iframe'>('callback');
+  const [animatedVehicle, setAnimatedVehicle] = useState<any>(null);
 
   // Clean up function
   const cleanupMap = () => {
+    // Clean up animated vehicle
+    if (animatedVehicle && animatedVehicle.cleanup) {
+      animatedVehicle.cleanup();
+    }
+    setAnimatedVehicle(null);
+
     const mapElement = document.getElementById(`single-order-map-${orderId}`);
     if (mapElement) {
       mapElement.innerHTML = '';
@@ -231,12 +238,100 @@ const SingleOrderMap: React.FC<SingleOrderMapProps> = ({
     }
   }, [isOpen, mapLoaded, scriptAdded, mapError, loadingMethod]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount and when dialog closes
   useEffect(() => {
     return () => {
       cleanupMap();
     };
   }, [orderId]);
+
+  useEffect(() => {
+    if (!isOpen && animatedVehicle) {
+      if (animatedVehicle.cleanup) {
+        animatedVehicle.cleanup();
+      }
+      setAnimatedVehicle(null);
+    }
+  }, [isOpen, animatedVehicle]);
+
+  // Function to create animated vehicle between pickup and destination
+  const createAnimatedVehicle = (map: any, start: any, end: any) => {
+    const vehicleIcon = {
+      url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="12" width="28" height="18" rx="3" fill="#3b82f6" stroke="#1e40af" stroke-width="2"/>
+          <circle cx="12" cy="32" r="4" fill="#374151"/>
+          <circle cx="28" cy="32" r="4" fill="#374151"/>
+          <rect x="8" y="14" width="24" height="10" rx="2" fill="#60a5fa"/>
+          <circle cx="12" cy="32" r="2" fill="#9ca3af"/>
+          <circle cx="28" cy="32" r="2" fill="#9ca3af"/>
+          <rect x="10" y="16" width="20" height="6" rx="1" fill="#dbeafe"/>
+          <text x="20" y="21" text-anchor="middle" font-size="10" fill="#1e40af" font-family="Arial" font-weight="bold">🚛</text>
+        </svg>
+      `),
+      scaledSize: new window.google.maps.Size(40, 40),
+      anchor: new window.google.maps.Point(20, 20)
+    };
+
+    const vehicle = new window.google.maps.Marker({
+      map: map,
+      position: start,
+      icon: vehicleIcon,
+      title: `Vehicle for Order ${orderId}`,
+      zIndex: 1000
+    });
+
+    const infoWindow = new window.google.maps.InfoWindow({
+      content: `
+        <div style="padding: 15px; max-width: 300px;">
+          <h3 style="margin: 0 0 10px 0; color: #3b82f6; font-size: 16px;">🚛 Vehicle in Transit</h3>
+          <p style="margin: 0 0 8px 0; font-weight: bold;">Order ID: ${orderId}</p>
+          <p style="margin: 0 0 8px 0;"><strong>Status:</strong> <span style="color: #f59e0b;">En Route</span></p>
+          <p style="margin: 0;">Delivery in progress...</p>
+        </div>
+      `
+    });
+
+    vehicle.addListener('click', () => {
+      infoWindow.open(map, vehicle);
+    });
+
+    // Animate vehicle between start and end points
+    let progress = 0;
+    const duration = 15000; // 15 seconds for one complete journey
+    const stepTime = 100; // Update every 100ms for smoother animation
+    let animationId: number;
+
+    const animate = () => {
+      progress += stepTime / duration;
+      
+      if (progress > 1) {
+        progress = 0; // Reset animation
+      }
+
+      // Calculate current position using smooth interpolation
+      const lat = start.lat() + (end.lat() - start.lat()) * progress;
+      const lng = start.lng() + (end.lng() - start.lng()) * progress;
+      
+      vehicle.setPosition(new window.google.maps.LatLng(lat, lng));
+      
+      // Continue animation
+      animationId = window.setTimeout(animate, stepTime);
+    };
+
+    // Start animation
+    animate();
+
+    // Store cleanup function
+    vehicle.cleanup = () => {
+      if (animationId) {
+        clearTimeout(animationId);
+      }
+      vehicle.setMap(null);
+    };
+
+    return vehicle;
+  };
 
   const initializeMap = () => {
     if (!window.google || !window.google.maps) {
@@ -269,6 +364,8 @@ const SingleOrderMap: React.FC<SingleOrderMapProps> = ({
       const bounds = new window.google.maps.LatLngBounds();
       const geocoder = new window.google.maps.Geocoder();
       let markersAdded = 0;
+      let pickupLocation: any = null;
+      let destinationLocation: any = null;
 
       // Geocode pickup address
       if (pickupAddress) {
@@ -307,6 +404,12 @@ const SingleOrderMap: React.FC<SingleOrderMapProps> = ({
 
             bounds.extend(results[0].geometry.location);
             markersAdded++;
+            pickupLocation = results[0].geometry.location;
+            
+            // Check if we have both locations to create route and vehicle
+            if (pickupLocation && destinationLocation) {
+              createRouteAndVehicle(map, pickupLocation, destinationLocation);
+            }
             
             if (markersAdded === 2 || !destinationAddress) {
               fitMapBounds();
@@ -354,6 +457,12 @@ const SingleOrderMap: React.FC<SingleOrderMapProps> = ({
 
             bounds.extend(results[0].geometry.location);
             markersAdded++;
+            destinationLocation = results[0].geometry.location;
+            
+            // Check if we have both locations to create route and vehicle
+            if (pickupLocation && destinationLocation) {
+              createRouteAndVehicle(map, pickupLocation, destinationLocation);
+            }
             
             if (markersAdded === 2 || !pickupAddress) {
               fitMapBounds();
@@ -363,6 +472,23 @@ const SingleOrderMap: React.FC<SingleOrderMapProps> = ({
           }
         });
       }
+
+      // Function to create route line and animated vehicle
+      const createRouteAndVehicle = (map: any, pickup: any, destination: any) => {
+        // Draw route line
+        const routePath = new window.google.maps.Polyline({
+          path: [pickup, destination],
+          geodesic: true,
+          strokeColor: '#3b82f6',
+          strokeOpacity: 0.8,
+          strokeWeight: 4,
+          map: map
+        });
+
+        // Create animated vehicle
+        const vehicle = createAnimatedVehicle(map, pickup, destination);
+        setAnimatedVehicle(vehicle);
+      };
 
       const fitMapBounds = () => {
         setTimeout(() => {

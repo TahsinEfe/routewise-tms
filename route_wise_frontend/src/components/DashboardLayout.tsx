@@ -24,7 +24,8 @@ import {
   ChevronDown,
   ChevronRight,
   Car,
-  Receipt
+  Receipt,
+  Building2
 } from 'lucide-react';
 import ThemeToggle from './ThemeToggle';
 
@@ -39,6 +40,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [vehiclesExpanded, setVehiclesExpanded] = useState(false);
   const [employeesExpanded, setEmployeesExpanded] = useState(false);
   const [ordersExpanded, setOrdersExpanded] = useState(false);
+  const [organizationExpanded, setOrganizationExpanded] = useState(false);
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
@@ -65,6 +67,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     { name: 'Salary Components', href: '/salary-components', icon: Receipt },
   ];
 
+  const organizationSubItems = [
+    { name: 'Companies', href: '/companies', icon: Building2 },
+    { name: 'Departments', href: '/departments', icon: Building },
+  ];
+
   const isActive = (href: string) => {
     if (href === '/') {
       return location.pathname === '/';
@@ -84,6 +91,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     return employeeSubItems.some(item => isActive(item.href));
   };
 
+  const isOrganizationSectionActive = () => {
+    return organizationSubItems.some(item => isActive(item.href));
+  };
+
   // Auto-expand sections if any sub-item is active
   React.useEffect(() => {
     if (isOrdersSectionActive()) {
@@ -94,6 +105,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     }
     if (isEmployeesSectionActive()) {
       setEmployeesExpanded(true);
+    }
+    if (isOrganizationSectionActive()) {
+      setOrganizationExpanded(true);
     }
   }, [location.pathname]);
 
@@ -235,6 +249,52 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               {employeesExpanded && (
                   <div className="ml-6 mt-1 space-y-1">
                     {employeeSubItems.map((subItem) => {
+                      const active = isActive(subItem.href);
+                      return (
+                          <Link
+                              key={subItem.name}
+                              to={subItem.href}
+                              className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                  active
+                                      ? 'bg-blue-100 text-blue-700'
+                                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                              }`}
+                              onClick={() => setSidebarOpen(false)}
+                          >
+                            <subItem.icon className={`w-4 h-4 mr-3 ${active ? 'text-blue-700' : 'text-gray-400'}`} />
+                            {subItem.name}
+                          </Link>
+                      );
+                    })}
+                  </div>
+              )}
+            </div>
+
+            {/* Organization Section with Dropdown */}
+            <div className="mb-1">
+              <button
+                  onClick={() => setOrganizationExpanded(!organizationExpanded)}
+                  className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      isOrganizationSectionActive()
+                          ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
+                  }`}
+              >
+                <div className="flex items-center">
+                  <Building2 className={`w-5 h-5 mr-3 ${isOrganizationSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                  Organization
+                </div>
+                {organizationExpanded ? (
+                    <ChevronDown className={`w-4 h-4 ${isOrganizationSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                ) : (
+                    <ChevronRight className={`w-4 h-4 ${isOrganizationSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                )}
+              </button>
+
+              {/* Organization Submenu */}
+              {organizationExpanded && (
+                  <div className="ml-6 mt-1 space-y-1">
+                    {organizationSubItems.map((subItem) => {
                       const active = isActive(subItem.href);
                       return (
                           <Link

@@ -24,6 +24,8 @@ import EmployeeTypes from "./pages/EmployeeTypes";
 import SalaryComponents from "./pages/SalaryComponents";
 import RoutesPage from "./pages/Routes";
 import Employees from "./pages/Employees";
+import Companies from "./pages/Companies";
+import Departments from "./pages/Departments";
 import Clients from "./pages/Clients";
 import Tracking from "./pages/Tracking";
 import Notifications from "./pages/Notifications";
@@ -121,6 +123,20 @@ const App = () => (
               <ProtectedRoute>
                 <DashboardLayout>
                   <SalaryComponents />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/companies" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Companies />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/departments" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Departments />
                 </DashboardLayout>
               </ProtectedRoute>
             } />

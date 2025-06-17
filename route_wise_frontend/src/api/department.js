@@ -19,61 +19,61 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Company API functions
-export const companyAPI = {
-  // Get all companies
+// Department API functions
+export const departmentAPI = {
+  // Get all departments
   getAll: async () => {
     try {
-      const response = await api.get('/companies');
+      const response = await api.get('/departments');
       return response.data;
     } catch (error) {
-      console.error('Error fetching companies:', error);
+      console.error('Error fetching departments:', error);
       throw error;
     }
   },
 
-  // Get company by ID
+  // Get department by ID
   getById: async (id) => {
     try {
-      const response = await api.get(`/companies/${id}`);
+      const response = await api.get(`/departments/${id}`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching company:', error);
+      console.error('Error fetching department:', error);
       throw error;
     }
   },
 
-  // Create new company
-  create: async (companyData) => {
+  // Create new department
+  create: async (departmentData) => {
     try {
-      const response = await api.post('/companies', companyData);
+      const response = await api.post('/departments', departmentData);
       return response.data;
     } catch (error) {
-      console.error('Error creating company:', error);
+      console.error('Error creating department:', error);
       throw error;
     }
   },
 
-  // Update company
-  update: async (id, companyData) => {
+  // Update department
+  update: async (id, departmentData) => {
     try {
-      const response = await api.put(`/companies/${id}`, companyData);
+      const response = await api.put(`/departments/${id}`, departmentData);
       return response.data;
     } catch (error) {
-      console.error('Error updating company:', error);
+      console.error('Error updating department:', error);
       throw error;
     }
   },
 
-  // Delete company
+  // Delete department
   delete: async (id) => {
     try {
-      await api.delete(`/companies/${id}`);
+      await api.delete(`/departments/${id}`);
     } catch (error) {
-      console.error('Error deleting company:', error);
+      console.error('Error deleting department:', error);
       throw error;
     }
   }
 };
 
-export default companyAPI;
+export default departmentAPI; 
