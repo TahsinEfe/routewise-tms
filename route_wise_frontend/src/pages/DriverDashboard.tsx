@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -13,14 +13,20 @@ import {
   Route,
   Star,
   Calendar,
-  Timer
+  Timer,
+  Users
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getAllVehicles } from '@/api/vehicle';
+import { getAllOrders } from '@/api/order';
+import { getAllEmployees } from '@/api/employee';
+import { getAllVehicleTypes } from '@/api/vehicleType';
+import { companyAPI } from '@/api/company';
 
 const DriverDashboard = () => {
   const driverStats = [
     {
-      title: 'Today\'s Deliveries',
+      title: 'Deliveries',
       value: '8',
       description: '6 completed, 2 pending',
       icon: Package,
@@ -33,7 +39,7 @@ const DriverDashboard = () => {
       description: '3 stops remaining',
       icon: Route,
       color: 'bg-green-500',
-      href: '/tracking'
+      href: '/order-routes'
     },
     {
       title: 'Vehicle Status',
@@ -43,14 +49,7 @@ const DriverDashboard = () => {
       color: 'bg-purple-500',
       href: '/vehicles'
     },
-    {
-      title: 'Performance',
-      value: '4.8/5',
-      description: 'Customer rating',
-      icon: Star,
-      color: 'bg-orange-500',
-      href: '/performance'
-    }
+    
   ];
 
   const todaysTasks = [
@@ -88,12 +87,126 @@ const DriverDashboard = () => {
     }
   ];
 
+  // İstatistikler için state
+  const [vehicleCount, setVehicleCount] = useState<number | null>(null);
+  const [orderCount, setOrderCount] = useState<number | null>(null);
+  const [driverCount, setDriverCount] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [vehicleTypes, setVehicleTypes] = useState<any[]>([]);
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [showVehicleTable, setShowVehicleTable] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    Promise.all([
+      getAllVehicles(),
+      getAllOrders(),
+      getAllEmployees(),
+      getAllVehicleTypes(),
+      companyAPI.getAll()
+    ])
+      .then(([vehiclesData, orders, employeesData, vehicleTypesData, companiesData]) => {
+        setVehicles(Array.isArray(vehiclesData) ? vehiclesData : []);
+        setVehicleCount(Array.isArray(vehiclesData) ? vehiclesData.length : 0);
+        setOrderCount(Array.isArray(orders) ? orders.length : 0);
+        setEmployees(Array.isArray(employeesData) ? employeesData : []);
+        // Driver rolüne sahip olanları say
+        const drivers = Array.isArray(employeesData)
+          ? employeesData.filter(emp => emp.roleName?.toLowerCase() === 'driver')
+          : [];
+        setDriverCount(drivers.length);
+        setVehicleTypes(Array.isArray(vehicleTypesData) ? vehicleTypesData : []);
+        setCompanies(Array.isArray(companiesData) ? companiesData : []);
+      })
+      .catch((err) => {
+        setError('İstatistikler yüklenirken hata oluştu.');
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Yardımcılar
+  const getCompanyName = (companyId: number) => {
+    const c = companies.find((c: any) => c.companyId === companyId);
+    return c?.companyName || '-';
+  };
+  const getVehicleTypeName = (vehicleTypeId: number) => {
+    const t = vehicleTypes.find((t: any) => t.vehicleTypeId === vehicleTypeId);
+    return t?.vehicleTypeName || '-';
+  };
+  const getDriverName = (assignedDriverId: number) => {
+    if (!assignedDriverId) return '-';
+    const driver = employees.find((e: any) => e.employeeId === assignedDriverId);
+    return driver ? `${driver.firstName} ${driver.lastName}` : '-';
+  };
+
   return (
     <div className="space-y-6">
+      {/* Genel İstatistikler */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Driver Dashboard</h1>
         <p className="text-gray-600 mt-2">Your daily routes and delivery status</p>
       </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <Card onClick={() => setShowVehicleTable((v) => !v)} className="cursor-pointer">
+          <CardContent className="flex items-center gap-4 p-4">
+            <Truck className="w-8 h-8 text-blue-600" />
+            <div>
+              <p className="text-lg font-semibold">Total Vehicles</p>
+              <p className="text-2xl font-bold">{loading ? '...' : vehicleCount}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-4 p-4">
+            <Package className="w-8 h-8 text-green-600" />
+            <div>
+              <p className="text-lg font-semibold">Total Orders</p>
+              <p className="text-2xl font-bold">{loading ? '...' : orderCount}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-4 p-4">
+            <Users className="w-8 h-8 text-orange-600" />
+            <div>
+              <p className="text-lg font-semibold">Total Drivers</p>
+              <p className="text-2xl font-bold">{loading ? '...' : driverCount}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      {error && <div className="text-red-600 font-semibold mb-4">{error}</div>}
+
+      {/* Araçlar Tablosu */}
+      {showVehicleTable && (
+        <div className="overflow-x-auto bg-white rounded-lg shadow p-4">
+          <h2 className="text-xl font-bold mb-4">Vehicles</h2>
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="px-4 py-2 text-left">License Plate</th>
+                <th className="px-4 py-2 text-left">Company</th>
+                <th className="px-4 py-2 text-left">Vehicle Type</th>
+                <th className="px-4 py-2 text-left">Assigned Driver</th>
+              </tr>
+            </thead>
+            <tbody>
+              {vehicles.map((vehicle) => (
+                <tr key={vehicle.vehicleId} className="border-b">
+                  <td className="px-4 py-2">{vehicle.licensePlate}</td>
+                  <td className="px-4 py-2">{getCompanyName(vehicle.companyId)}</td>
+                  <td className="px-4 py-2">{getVehicleTypeName(vehicle.vehicleTypeId)}</td>
+                  <td className="px-4 py-2">{getDriverName(vehicle.assignedDriverId)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Driver Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -116,87 +229,6 @@ const DriverDashboard = () => {
             </CardContent>
           </Card>
         ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Today's Tasks */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Today's Deliveries
-            </CardTitle>
-            <CardDescription>Your scheduled deliveries for today</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {todaysTasks.map((task) => (
-                <div key={task.id} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                  <div className={`p-1 rounded-full ${
-                    task.status === 'completed' ? 'bg-green-100' :
-                    task.status === 'in-progress' ? 'bg-blue-100' : 'bg-gray-100'
-                  }`}>
-                    {task.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
-                    {task.status === 'in-progress' && <Timer className="w-4 h-4 text-blue-600" />}
-                    {task.status === 'pending' && <Clock className="w-4 h-4 text-gray-600" />}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-gray-900">{task.address}</p>
-                      {task.priority === 'high' && (
-                        <span className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded-full">High Priority</span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">Scheduled: {task.time}</p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button size="sm" variant="ghost" asChild>
-                      <Link to="/tracking">
-                        <Navigation className="w-4 h-4" />
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Driver Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Common driver tasks and tools</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              <Button asChild variant="outline" className="h-20 flex-col gap-2">
-                <Link to="/tracking">
-                  <Navigation className="w-6 h-6" />
-                  <span className="text-sm">Start Navigation</span>
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="h-20 flex-col gap-2">
-                <Link to="/orders">
-                  <Package className="w-6 h-6" />
-                  <span className="text-sm">Update Delivery</span>
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="h-20 flex-col gap-2">
-                <Link to="/vehicles">
-                  <Fuel className="w-6 h-6" />
-                  <span className="text-sm">Vehicle Check</span>
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="h-20 flex-col gap-2">
-                <Link to="/notifications">
-                  <AlertTriangle className="w-6 h-6" />
-                  <span className="text-sm">Report Issue</span>
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

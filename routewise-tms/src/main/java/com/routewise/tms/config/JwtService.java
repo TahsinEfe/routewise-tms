@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Service
-public class JwtService {
+public class    JwtService {
     private final String SECRET_KEY = "super_secret_token"; // Gerçek projede env değişkeni ile sakla!
 
     public String extractUsername(String token) {

@@ -2,7 +2,6 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:7070/api';
 
-// Create axios instance with default config
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -10,7 +9,7 @@ const api = axios.create({
   },
 });
 
-// Add token to requests
+// Add token to requests (only if token exists)
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -21,11 +20,23 @@ api.interceptors.request.use((config) => {
 
 // Company API functions
 export const companyAPI = {
-  // Get all companies
+  // Get all companies (public endpoint for registration)
   getAll: async () => {
     try {
-      const response = await api.get('/companies');
-      return response.data;
+      // Direct fetch for registration page (no token required)
+      const response = await fetch(`${API_BASE_URL}/companies`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data;
     } catch (error) {
       console.error('Error fetching companies:', error);
       throw error;

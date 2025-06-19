@@ -58,19 +58,23 @@ public class VehicleServiceImpl implements IVehicleService {
 
     @Override
     public void deleteVehicle(Integer id) {
-        vehicleRepository.deleteById(id);
+        Vehicle vehicle = vehicleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found"));
+        vehicle.setIsDeleted(true);
+        vehicleRepository.save(vehicle);
     }
 
     @Override
     public VehicleDto getVehicleById(Integer id) {
         Vehicle v = vehicleRepository.findById(id)
+                .filter(vehicle -> !Boolean.TRUE.equals(vehicle.getIsDeleted()))
                 .orElseThrow(() -> new ResourceNotFoundException("Vehicle not found"));
         return mapToDto(v);
     }
 
     @Override
     public List<VehicleDto> getAllVehicles() {
-        return vehicleRepository.findAll().stream()
+        return vehicleRepository.findAllByIsDeletedFalse().stream()
                 .map(this::mapToDto)
                 .toList();
     }

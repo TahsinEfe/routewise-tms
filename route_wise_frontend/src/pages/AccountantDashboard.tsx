@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -16,6 +16,10 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getAllClients } from '@/api/client';
+import { getAllOrders } from '@/api/order';
+import { getOrderItemsByOrderId } from '@/api/orderItem';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const AccountantDashboard = () => {
   const financialStats = [
@@ -88,6 +92,50 @@ const AccountantDashboard = () => {
     }
   ];
 
+  // Yeni state'ler
+  const [clients, setClients] = useState<any[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [orderItems, setOrderItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Clientleri çek
+  useEffect(() => {
+    getAllClients().then(setClients).catch(() => setError('Clients yüklenemedi.'));
+  }, []);
+
+  // Client seçilince orderları çek
+  useEffect(() => {
+    if (selectedClientId) {
+      setLoading(true);
+      getAllOrders()
+        .then((allOrders) => {
+          setOrders(allOrders.filter((o: any) => o.clientId === selectedClientId));
+        })
+        .catch(() => setError('Orders yüklenemedi.'))
+        .finally(() => setLoading(false));
+    } else {
+      setOrders([]);
+      setSelectedOrderId(null);
+      setOrderItems([]);
+    }
+  }, [selectedClientId]);
+
+  // Order seçilince order itemları çek
+  useEffect(() => {
+    if (selectedOrderId) {
+      setLoading(true);
+      getOrderItemsByOrderId(selectedOrderId)
+        .then(setOrderItems)
+        .catch(() => setError('Order items yüklenemedi.'))
+        .finally(() => setLoading(false));
+    } else {
+      setOrderItems([]);
+    }
+  }, [selectedOrderId]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -95,130 +143,67 @@ const AccountantDashboard = () => {
         <p className="text-gray-600 mt-2">Financial overview and accounting management</p>
       </div>
 
-      {/* Financial Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {financialStats.map((stat) => (
-          <Card key={stat.title} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                  <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-sm text-gray-500 mt-1">{stat.description}</p>
-                </div>
-                <div className={`p-3 rounded-xl ${stat.color}`}>
-                  <stat.icon className="w-6 h-6 text-white" />
-                </div>
-              </div>
-              <Button asChild variant="ghost" size="sm" className="w-full mt-4">
-                <Link to={stat.href}>View Details</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Financial Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5" />
-              Recent Transactions
-            </CardTitle>
-            <CardDescription>Latest financial activities and transactions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {financialActivity.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                  <div className={`p-1 rounded-full ${
-                    activity.status === 'success' ? 'bg-green-100' :
-                    activity.status === 'warning' ? 'bg-yellow-100' : 
-                    activity.status === 'error' ? 'bg-red-100' : 'bg-blue-100'
-                  }`}>
-                    {activity.status === 'success' && <TrendingUp className="w-4 h-4 text-green-600" />}
-                    {activity.status === 'warning' && <TrendingDown className="w-4 h-4 text-yellow-600" />}
-                    {activity.status === 'error' && <AlertCircle className="w-4 h-4 text-red-600" />}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-gray-900">{activity.message}</p>
-                    <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-                  </div>
-                  <div className={`text-sm font-medium ${
-                    activity.amount.startsWith('+') ? 'text-green-600' : 
-                    activity.amount.startsWith('-') ? 'text-red-600' : 'text-gray-600'
-                  }`}>
-                    {activity.amount}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Accounting Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Financial Actions</CardTitle>
-            <CardDescription>Accounting and financial management tools</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              <Button asChild variant="outline" className="h-20 flex-col gap-2">
-                <Link to="/payroll">
-                  <Wallet className="w-6 h-6" />
-                  <span className="text-sm">Process Payroll</span>
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="h-20 flex-col gap-2">
-                <Link to="/invoices">
-                  <FileText className="w-6 h-6" />
-                  <span className="text-sm">Manage Invoices</span>
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="h-20 flex-col gap-2">
-                <Link to="/expenses">
-                  <Calculator className="w-6 h-6" />
-                  <span className="text-sm">Track Expenses</span>
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="h-20 flex-col gap-2">
-                <Link to="/reports">
-                  <PieChart className="w-6 h-6" />
-                  <span className="text-sm">Financial Reports</span>
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Monthly Summary */}
+      {/* Client/Order/OrderItem Chart Bölümü */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
-            Monthly Financial Summary
-          </CardTitle>
-          <CardDescription>Key financial metrics for this month</CardDescription>
+          <CardTitle>Order Items by Client</CardTitle>
+          <CardDescription>Client bazlı order ve harcama analizi</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">$45,230</div>
-              <div className="text-sm text-gray-600">Total Revenue</div>
-              <div className="text-xs text-green-600 mt-1">↗ +12% vs last month</div>
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Client Listesi */}
+            <div className="w-full md:w-1/4">
+              <h3 className="font-semibold mb-2">Clients</h3>
+              <ul className="space-y-1">
+                {clients.map((client) => (
+                  <li key={client.clientId}>
+                    <Button
+                      variant={selectedClientId === client.clientId ? 'default' : 'outline'}
+                      className="w-full justify-start"
+                      onClick={() => setSelectedClientId(client.clientId)}
+                    >
+                      {client.companyName}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <div className="text-2xl font-bold text-red-600">$28,450</div>
-              <div className="text-sm text-gray-600">Total Expenses</div>
-              <div className="text-xs text-red-600 mt-1">↗ +5% vs last month</div>
+            {/* Order Listesi */}
+            <div className="w-full md:w-1/4">
+              <h3 className="font-semibold mb-2">Orders</h3>
+              <ul className="space-y-1">
+                {orders.map((order) => (
+                  <li key={order.orderId}>
+                    <Button
+                      variant={selectedOrderId === order.orderId ? 'default' : 'outline'}
+                      className="w-full justify-start"
+                      onClick={() => setSelectedOrderId(order.orderId)}
+                    >
+                      Order #{order.orderId}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">$16,780</div>
-              <div className="text-sm text-gray-600">Net Profit</div>
-              <div className="text-xs text-blue-600 mt-1">↗ +8% vs last month</div>
+            {/* Grafik Alanı */}
+            <div className="w-full md:w-2/4">
+              <h3 className="font-semibold mb-2">Order Items</h3>
+              {loading ? (
+                <div>Loading...</div>
+              ) : orderItems.length === 0 ? (
+                <div className="text-gray-500">No data</div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={orderItems} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                    <XAxis dataKey="itemName" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="quantity" fill="#8884d8" name="Quantity" />
+                    <Bar dataKey="unitPrice" fill="#82ca9d" name="Unit Price" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         </CardContent>

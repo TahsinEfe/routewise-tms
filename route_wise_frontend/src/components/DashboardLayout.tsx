@@ -16,7 +16,6 @@ import {
   Map,
   Users,
   Building,
-  Bell,
   Settings,
   LogOut,
   Menu,
@@ -42,11 +41,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [ordersExpanded, setOrdersExpanded] = useState(false);
   const [organizationExpanded, setOrganizationExpanded] = useState(false);
 
+  // Role-based section visibility
+  const role = user?.roleName?.toLowerCase();
+  const shouldShowOrders = role === 'admin' || role === 'driver' || role === 'accountant';
+  const shouldShowEmployees = role === 'admin' || role === 'manager';
+  const shouldShowOrganizations = role === 'admin' || role === 'manager';
+  const shouldShowVehicles = role === 'admin' || role === 'driver';
+  const shouldShowClients = role === 'admin' || role === 'manager' || role === 'accountant';
+
   const navigation = [
     { name: 'Dashboard', href: '/', icon: Home },
     { name: 'Routes', href: '/routes', icon: Map },
-    { name: 'Clients', href: '/clients', icon: Building },
-    { name: 'Live Tracking', href: '/tracking', icon: Map },
   ];
 
   const vehicleSubItems = [
@@ -111,7 +116,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     }
   }, [location.pathname]);
 
-  // Kullanıcı adının baş harfleri (AvatarFallback için)
   const getInitials = () => {
     if (!user) return '';
     const f = user.firstName?.charAt(0) ?? '';
@@ -119,7 +123,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     return f + l;
   };
 
-  // Tam ad (firstName + lastName)
   const getFullName = () => {
     if (!user) return '';
     return [user.firstName, user.lastName].filter(Boolean).join(' ');
@@ -141,8 +144,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         } lg:translate-x-0 lg:static lg:inset-0`}>
           <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                <Truck className="w-5 h-5 text-white" />
+              <div className="w-8 h-8">
+                <img src="/Route-removebg-preview.png" alt="RouteWise Logo" className="w-8 h-8" />
               </div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 RouteWise
@@ -159,208 +162,233 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           </div>
 
           <nav className="mt-6 px-3">
-            {navigation.map((item) => {
-              const active = isActive(item.href);
-              return (
-                  <Link
-                      key={item.name}
-                      to={item.href}
-                      className={`flex items-center px-3 py-3 mb-1 rounded-xl text-sm font-medium transition-all duration-200 ${
-                          active
-                              ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
-                              : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
-                      }`}
-                      onClick={() => setSidebarOpen(false)}
-                  >
-                    <item.icon className={`w-5 h-5 mr-3 ${active ? 'text-white' : 'text-gray-500'}`} />
-                    {item.name}
-                  </Link>
-              );
-            })}
+            {/* Dashboard */}
+            <Link
+              key="Dashboard"
+              to="/"
+              className={`flex items-center px-3 py-3 mb-1 rounded-xl text-sm font-medium transition-all duration-200 ${
+                isActive('/')
+                  ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
+              }`}
+              onClick={() => setSidebarOpen(false)}
+            >
+              <Home className={`w-5 h-5 mr-3 ${isActive('/') ? 'text-white' : 'text-gray-500'}`} />
+              Dashboard
+            </Link>
+
+            
+
+            
+
+            {/* Clients Section */}
+            {shouldShowClients && (
+              <Link
+                key="Clients"
+                to="/clients"
+                className={`flex items-center px-3 py-3 mb-1 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  isActive('/clients')
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
+                }`}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <Building className={`w-5 h-5 mr-3 ${isActive('/clients') ? 'text-white' : 'text-gray-500'}`} />
+                Clients
+              </Link>
+            )}
 
             {/* Orders Section with Dropdown */}
-            <div className="mb-1">
-              <button
-                  onClick={() => setOrdersExpanded(!ordersExpanded)}
-                  className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      isOrdersSectionActive()
-                          ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
-                  }`}
-              >
-                <div className="flex items-center">
-                  <Package className={`w-5 h-5 mr-3 ${isOrdersSectionActive() ? 'text-white' : 'text-gray-500'}`} />
-                  Orders
-                </div>
-                {ordersExpanded ? (
-                    <ChevronDown className={`w-4 h-4 ${isOrdersSectionActive() ? 'text-white' : 'text-gray-500'}`} />
-                ) : (
-                    <ChevronRight className={`w-4 h-4 ${isOrdersSectionActive() ? 'text-white' : 'text-gray-500'}`} />
-                )}
-              </button>
-
-              {/* Orders Submenu */}
-              {ordersExpanded && (
-                  <div className="ml-6 mt-1 space-y-1">
-                    {orderSubItems.map((subItem) => {
-                      const active = isActive(subItem.href);
-                      return (
-                          <Link
-                              key={subItem.name}
-                              to={subItem.href}
-                              className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                  active
-                                      ? 'bg-blue-100 text-blue-700'
-                                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                              }`}
-                              onClick={() => setSidebarOpen(false)}
-                          >
-                            <subItem.icon className={`w-4 h-4 mr-3 ${active ? 'text-blue-700' : 'text-gray-400'}`} />
-                            {subItem.name}
-                          </Link>
-                      );
-                    })}
+            {shouldShowOrders && (
+              <div className="mb-1">
+                <button
+                    onClick={() => setOrdersExpanded(!ordersExpanded)}
+                    className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        isOrdersSectionActive()
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
+                    }`}
+                >
+                  <div className="flex items-center">
+                    <Package className={`w-5 h-5 mr-3 ${isOrdersSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                    Orders
                   </div>
-              )}
-            </div>
+                  {ordersExpanded ? (
+                      <ChevronDown className={`w-4 h-4 ${isOrdersSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                  ) : (
+                      <ChevronRight className={`w-4 h-4 ${isOrdersSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                  )}
+                </button>
+
+                {/* Orders Submenu */}
+                {ordersExpanded && (
+                    <div className="ml-6 mt-1 space-y-1">
+                      {orderSubItems.map((subItem) => {
+                        const active = isActive(subItem.href);
+                        return (
+                            <Link
+                                key={subItem.name}
+                                to={subItem.href}
+                                className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                    active
+                                        ? 'bg-blue-100 text-blue-700'
+                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                }`}
+                                onClick={() => setSidebarOpen(false)}
+                            >
+                              <subItem.icon className={`w-4 h-4 mr-3 ${active ? 'text-blue-700' : 'text-gray-400'}`} />
+                              {subItem.name}
+                            </Link>
+                        );
+                      })}
+                    </div>
+                )}
+              </div>
+            )}
 
             {/* Employees Section with Dropdown */}
-            <div className="mb-1">
-              <button
-                  onClick={() => setEmployeesExpanded(!employeesExpanded)}
-                  className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      isEmployeesSectionActive()
-                          ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
-                  }`}
-              >
-                <div className="flex items-center">
-                  <Users className={`w-5 h-5 mr-3 ${isEmployeesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
-                  Employees
-                </div>
-                {employeesExpanded ? (
-                    <ChevronDown className={`w-4 h-4 ${isEmployeesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
-                ) : (
-                    <ChevronRight className={`w-4 h-4 ${isEmployeesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
-                )}
-              </button>
-
-              {/* Employees Submenu */}
-              {employeesExpanded && (
-                  <div className="ml-6 mt-1 space-y-1">
-                    {employeeSubItems.map((subItem) => {
-                      const active = isActive(subItem.href);
-                      return (
-                          <Link
-                              key={subItem.name}
-                              to={subItem.href}
-                              className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                  active
-                                      ? 'bg-blue-100 text-blue-700'
-                                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                              }`}
-                              onClick={() => setSidebarOpen(false)}
-                          >
-                            <subItem.icon className={`w-4 h-4 mr-3 ${active ? 'text-blue-700' : 'text-gray-400'}`} />
-                            {subItem.name}
-                          </Link>
-                      );
-                    })}
+            {shouldShowEmployees && (
+              <div className="mb-1">
+                <button
+                    onClick={() => setEmployeesExpanded(!employeesExpanded)}
+                    className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        isEmployeesSectionActive()
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
+                    }`}
+                >
+                  <div className="flex items-center">
+                    <Users className={`w-5 h-5 mr-3 ${isEmployeesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                    Employees
                   </div>
-              )}
-            </div>
+                  {employeesExpanded ? (
+                      <ChevronDown className={`w-4 h-4 ${isEmployeesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                  ) : (
+                      <ChevronRight className={`w-4 h-4 ${isEmployeesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                  )}
+                </button>
+
+                {/* Employees Submenu */}
+                {employeesExpanded && (
+                    <div className="ml-6 mt-1 space-y-1">
+                      {employeeSubItems.map((subItem) => {
+                        const active = isActive(subItem.href);
+                        return (
+                            <Link
+                                key={subItem.name}
+                                to={subItem.href}
+                                className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                    active
+                                        ? 'bg-blue-100 text-blue-700'
+                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                }`}
+                                onClick={() => setSidebarOpen(false)}
+                            >
+                              <subItem.icon className={`w-4 h-4 mr-3 ${active ? 'text-blue-700' : 'text-gray-400'}`} />
+                              {subItem.name}
+                            </Link>
+                        );
+                      })}
+                    </div>
+                )}
+              </div>
+            )}
 
             {/* Organization Section with Dropdown */}
-            <div className="mb-1">
-              <button
-                  onClick={() => setOrganizationExpanded(!organizationExpanded)}
-                  className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      isOrganizationSectionActive()
-                          ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
-                  }`}
-              >
-                <div className="flex items-center">
-                  <Building2 className={`w-5 h-5 mr-3 ${isOrganizationSectionActive() ? 'text-white' : 'text-gray-500'}`} />
-                  Organization
-                </div>
-                {organizationExpanded ? (
-                    <ChevronDown className={`w-4 h-4 ${isOrganizationSectionActive() ? 'text-white' : 'text-gray-500'}`} />
-                ) : (
-                    <ChevronRight className={`w-4 h-4 ${isOrganizationSectionActive() ? 'text-white' : 'text-gray-500'}`} />
-                )}
-              </button>
-
-              {/* Organization Submenu */}
-              {organizationExpanded && (
-                  <div className="ml-6 mt-1 space-y-1">
-                    {organizationSubItems.map((subItem) => {
-                      const active = isActive(subItem.href);
-                      return (
-                          <Link
-                              key={subItem.name}
-                              to={subItem.href}
-                              className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                  active
-                                      ? 'bg-blue-100 text-blue-700'
-                                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                              }`}
-                              onClick={() => setSidebarOpen(false)}
-                          >
-                            <subItem.icon className={`w-4 h-4 mr-3 ${active ? 'text-blue-700' : 'text-gray-400'}`} />
-                            {subItem.name}
-                          </Link>
-                      );
-                    })}
+            {shouldShowOrganizations && (
+              <div className="mb-1">
+                <button
+                    onClick={() => setOrganizationExpanded(!organizationExpanded)}
+                    className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        isOrganizationSectionActive()
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
+                    }`}
+                >
+                  <div className="flex items-center">
+                    <Building2 className={`w-5 h-5 mr-3 ${isOrganizationSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                    Organization
                   </div>
-              )}
-            </div>
+                  {organizationExpanded ? (
+                      <ChevronDown className={`w-4 h-4 ${isOrganizationSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                  ) : (
+                      <ChevronRight className={`w-4 h-4 ${isOrganizationSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                  )}
+                </button>
+
+                {/* Organization Submenu */}
+                {organizationExpanded && (
+                    <div className="ml-6 mt-1 space-y-1">
+                      {organizationSubItems.map((subItem) => {
+                        const active = isActive(subItem.href);
+                        return (
+                            <Link
+                                key={subItem.name}
+                                to={subItem.href}
+                                className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                    active
+                                        ? 'bg-blue-100 text-blue-700'
+                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                }`}
+                                onClick={() => setSidebarOpen(false)}
+                            >
+                              <subItem.icon className={`w-4 h-4 mr-3 ${active ? 'text-blue-700' : 'text-gray-400'}`} />
+                              {subItem.name}
+                            </Link>
+                        );
+                      })}
+                    </div>
+                )}
+              </div>
+            )}
 
             {/* Vehicles Section with Dropdown */}
-            <div className="mb-1">
-              <button
-                  onClick={() => setVehiclesExpanded(!vehiclesExpanded)}
-                  className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      isVehiclesSectionActive()
-                          ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
-                  }`}
-              >
-                <div className="flex items-center">
-                  <Truck className={`w-5 h-5 mr-3 ${isVehiclesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
-                  Vehicles
-                </div>
-                {vehiclesExpanded ? (
-                    <ChevronDown className={`w-4 h-4 ${isVehiclesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
-                ) : (
-                    <ChevronRight className={`w-4 h-4 ${isVehiclesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
-                )}
-              </button>
-
-              {/* Vehicles Submenu */}
-              {vehiclesExpanded && (
-                  <div className="ml-6 mt-1 space-y-1">
-                    {vehicleSubItems.map((subItem) => {
-                      const active = isActive(subItem.href);
-                      return (
-                          <Link
-                              key={subItem.name}
-                              to={subItem.href}
-                              className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                  active
-                                      ? 'bg-blue-100 text-blue-700'
-                                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                              }`}
-                              onClick={() => setSidebarOpen(false)}
-                          >
-                            <subItem.icon className={`w-4 h-4 mr-3 ${active ? 'text-blue-700' : 'text-gray-400'}`} />
-                            {subItem.name}
-                          </Link>
-                      );
-                    })}
+            {shouldShowVehicles && (
+              <div className="mb-1">
+                <button
+                    onClick={() => setVehiclesExpanded(!vehiclesExpanded)}
+                    className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                        isVehiclesSectionActive()
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
+                    }`}
+                >
+                  <div className="flex items-center">
+                    <Truck className={`w-5 h-5 mr-3 ${isVehiclesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                    Vehicles
                   </div>
-              )}
-            </div>
+                  {vehiclesExpanded ? (
+                      <ChevronDown className={`w-4 h-4 ${isVehiclesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                  ) : (
+                      <ChevronRight className={`w-4 h-4 ${isVehiclesSectionActive() ? 'text-white' : 'text-gray-500'}`} />
+                  )}
+                </button>
+
+                {/* Vehicles Submenu */}
+                {vehiclesExpanded && (
+                    <div className="ml-6 mt-1 space-y-1">
+                      {vehicleSubItems.map((subItem) => {
+                        const active = isActive(subItem.href);
+                        return (
+                            <Link
+                                key={subItem.name}
+                                to={subItem.href}
+                                className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                                    active
+                                        ? 'bg-blue-100 text-blue-700'
+                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                }`}
+                                onClick={() => setSidebarOpen(false)}
+                            >
+                              <subItem.icon className={`w-4 h-4 mr-3 ${active ? 'text-blue-700' : 'text-gray-400'}`} />
+                              {subItem.name}
+                            </Link>
+                        );
+                      })}
+                    </div>
+                )}
+              </div>
+            )}
           </nav>
         </div>
 
@@ -379,11 +407,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
             <div className="flex items-center space-x-4">
               <ThemeToggle />
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/notifications">
-                  <Bell className="w-5 h-5" />
-                </Link>
-              </Button>
+              
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

@@ -7,7 +7,9 @@ import com.routewise.tms.model.Role;
 import com.routewise.tms.repository.CompanyRepository;
 import com.routewise.tms.repository.RoleRepository;
 import com.routewise.tms.repository.UserRepository;
+import com.routewise.tms.config.JwtService;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
@@ -21,14 +23,16 @@ public class AuthServiceImpl implements AuthService {
     private final RoleRepository roleRepository;
     private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     // Constructor injection (Spring otomatik yapar)
     public AuthServiceImpl(UserRepository userRepository, RoleRepository roleRepository,
-                           CompanyRepository companyRepository, PasswordEncoder passwordEncoder) {
+                           CompanyRepository companyRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.companyRepository = companyRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @Override
@@ -94,10 +98,9 @@ public class AuthServiceImpl implements AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
 
-
         return new AuthResponse(
                 "Login successful!",
-                null, 
+                "mock-jwt-token", 
                 new UserInfoDto(user.getUserId(), user.getFirstName(), user.getLastName(), user.getEmail(), user.getRole().getRoleName())
         );
     }
@@ -112,5 +115,60 @@ public class AuthServiceImpl implements AuthService {
     public Object refreshToken(RefreshTokenRequest request) {
         // Token yenileme logic'i
         return "Token yenilendi!";
+    }
+
+    @Override
+    public Object updateUser(UserUpdateRequest request, String authHeader) {
+        try {
+            // JWT token'dan user email'ini çıkar
+            String token = authHeader.replace("Bearer ", "");
+            String email = jwtService.extractUsername(token);
+            
+            // Kullanıcıyı bul
+            UserEntity user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND, "User not found"));
+
+            // Email değişikliği kontrolü
+            if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+                if (userRepository.existsByEmail(request.getEmail())) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already exists");
+                }
+                user.setEmail(request.getEmail());
+            }
+
+            // Username değişikliği kontrolü
+            if (request.getUsername() != null && !request.getUsername().equals(user.getUsername())) {
+                if (userRepository.existsByUsername(request.getUsername())) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
+                }
+                user.setUsername(request.getUsername());
+            }
+
+            // Diğer alanları güncelle
+            if (request.getFirstName() != null) {
+                user.setFirstName(request.getFirstName());
+            }
+            if (request.getLastName() != null) {
+                user.setLastName(request.getLastName());
+            }
+            // Phone field'ı henüz UserEntity'de yok, sonra eklenecek
+            // if (request.getPhone() != null) {
+            //     user.setPhone(request.getPhone());
+            // }
+
+            user.setUpdatedAt(new java.sql.Timestamp(System.currentTimeMillis()));
+            userRepository.save(user);
+
+            // Güncellenmiş user bilgilerini döndür
+            return new AuthResponse(
+                    "User updated successfully!",
+                    null,
+                    new UserInfoDto(user.getUserId(), user.getFirstName(), user.getLastName(), 
+                                  user.getEmail(), user.getRole().getRoleName())
+            );
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Update failed: " + e.getMessage());
+        }
     }
 }

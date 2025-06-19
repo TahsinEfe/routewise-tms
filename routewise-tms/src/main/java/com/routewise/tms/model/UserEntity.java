@@ -50,6 +50,9 @@ public class UserEntity {
     @Column(name = "created_at", updatable = false)
     private java.sql.Timestamp createdAt;
 
+    @Column(name = "updated_at")
+    private java.sql.Timestamp updatedAt;
+
     @Column(name = "is_deleted")
     private Boolean isDeleted = false;
 
