@@ -137,18 +137,9 @@ const Register = () => {
           formData.roleName,                                                  // roleName
           Number(formData.companyId)                                          // companyId
       );
-      toast({
-        title: "🎉 Account created!",
-        description: "Welcome to RouteWise. You're now logged in.",
-        variant: "default",
-      });
       navigate('/');
     }  catch (error) {
-      toast({
-        title: "Registration failed",
-        description: "Please try again with different details.",
-        variant: "destructive",
-      });
+      // No need to show a toast here, as the registration failure is handled by the component
     }
   };
 
