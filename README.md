@@ -1,115 +1,147 @@
-# RouteWiseTMS
-
-RouteWiseTMS is a full-stack Transportation Management System (TMS) designed to streamline and optimize transportation operations for companies. The project consists of a modern React-based frontend and a robust Spring Boot backend.
-
----
-
-## Features
-
-- User registration, authentication, and role-based dashboards
-- Company, client, employee, vehicle, and order management
-- Interactive maps and route planning
-- Expense and payroll tracking
-- Responsive, modern UI with shadcn-ui and Tailwind CSS
-- Secure RESTful API with JWT authentication
+<h1 align="center">🚛 RouteWiseTMS</h1>
+<p align="center">
+  A modern Transportation Management System (TMS) built with React and Spring Boot to streamline logistics operations.
+</p>
 
 ---
 
-## Tech Stack
+## 📚 Table of Contents
+- [Architecture Overview](#architecture-overview)
+- [Design Patterns](#design-patterns)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Setup Instructions](#setup-instructions)
+  - [Backend Setup](#backend-setup)
+  - [Frontend Setup](#frontend-setup)
+  - [Google Maps Integration](#google-maps-integration)
+- [License](#license)
+
+---
+
+## 🏗️ Architecture Overview
+
+RouteWiseTMS follows a modern layered architecture:
+
+- **Frontend**: React-based SPA with reusable UI components
+- **Backend**: Spring Boot with RESTful APIs
+- **Database**: MySQL using JPA/Hibernate
+- **Security**: JWT authentication with role-based access control
+- **Docs**: Swagger/OpenAPI for API documentation
+
+---
+
+## 🎨 Design Patterns
+
+RouteWiseTMS applies several Gang of Four (GoF) design patterns:
+
+### 🔧 Creational
+- **Factory Pattern**: `ClientFactory`, `OrderFactory`, `VehicleFactory`, etc. for object creation logic
+
+### 🧩 Structural
+- **Facade Pattern**: Service interfaces (e.g., `IOrderService`) to simplify complex operations
+- **Data Mapper Pattern**: DTOs decouple database schema from business logic
+
+### 🔁 Behavioral
+- **Strategy Pattern**: Custom strategies for different order types/statuses
+- **Observer Pattern**: Frontend state updates using React’s state management
+
+---
+
+## 🚀 Features
+
+- ✅ User Registration & Authentication (JWT)
+- ✅ Role-Based Access Control
+- ✅ Company & Client Management
+- ✅ Order Lifecycle Management
+- ✅ Route Visualization with Interactive Maps
+- ✅ Vehicle & Driver Assignment
+- ✅ Dashboard Metrics (Admin/User-specific)
+- ✅ Responsive UI for all screen sizes
+
+---
+
+## 🧰 Tech Stack
 
 ### Frontend
-
-- **React** (with Vite, TypeScript)
-- **Tailwind CSS** & **shadcn-ui** for UI
-- **React Router** for navigation
-- **React Query** for data fetching
-- **Leaflet** for interactive maps
+- React 18 + TypeScript + Vite
+- Tailwind CSS + [shadcn/ui](https://ui.shadcn.com)
+- React Router, Leaflet, Google Maps API
+- Recharts (Analytics), Lucide Icons
 
 ### Backend
-
-- **Spring Boot 3** (Java 21)
-- **Spring Data JPA** (MySQL)
-- **Spring Security** (JWT-based authentication)
-- **OpenAPI/Swagger** for API documentation
-
----
-
-## Project Structure
-
-```
-RouteWiseTMS/
-  ├── route_wise_frontend/   # React frontend (Vite, TypeScript)
-  └── routewise-tms/         # Spring Boot backend (Java)
-```
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v18+ recommended)
-- Java 21
-- Maven
+- Spring Boot 3 (Java 21)
+- Spring Security (JWT)
+- Spring Data JPA + Hibernate
 - MySQL
+- Swagger/OpenAPI, Lombok
 
 ---
 
-### Backend Setup
+## 🗂 Project Structure
 
-1. **Configure Database:**
-   - Create a MySQL database (e.g., `routewise_tms`).
-   - Update `src/main/resources/application.properties` with your DB credentials.
+```
+routewise-tms/
+├── routewise-backend/ # Spring Boot backend
+├── routewise-frontend/ # React frontend
+│ └── .env.local # Google Maps API Key here
+└── docs/
+└── GOOGLE_MAPS_SETUP.md # Map integration guide
+```
 
-2. **Build & Run:**
-   ```sh
-   cd routewise-tms
-   mvn clean install
-   mvn spring-boot:run
-   ```
-   The backend will start on [http://localhost:7070](http://localhost:7070).
 
-3. **API Docs:**
-   - Visit [http://localhost:7070/swagger-ui.html](http://localhost:7070/swagger-ui.html) for interactive API documentation.
 
 ---
 
-### Frontend Setup
+## ⚙️ Setup Instructions
 
-1. **Install dependencies:**
-   ```sh
-   cd route_wise_frontend
-   npm install
-   ```
+### 🔙 Backend Setup
 
-2. **Start the development server:**
-   ```sh
-   npm run dev
-   ```
-   The frontend will be available at [http://localhost:5173](http://localhost:5173) (or as indicated in the terminal).
+1. Create MySQL database named `routewise_tms`
+2. Configure `application.properties` with DB credentials
+3. Build & run the Spring Boot app:
 
----
+```bash
+mvn clean install
+mvn spring-boot:run
+```
 
-## Deployment
+➡ Access API Docs at: http://localhost:7070/swagger-ui.html
 
-- The frontend can be built with `npm run build` and deployed to any static hosting.
-- The backend can be packaged as a JAR and deployed to any Java server.
 
----
+💻 Frontend Setup
+Install dependencies:
 
-## Customization
+```bash
 
-- **Google Maps/Leaflet:** See `GOOGLE_MAPS_SETUP.md` for map integration details.
-- **Domain/Branding:** Update logos and company info in the frontend as needed.
+cd routewise-frontend
+npm install
+```
 
----
+Start dev server:
 
-## Contributing
+```bash
+npm run dev
+➡ Access app at: http://localhost:3000
+```
 
-Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
 
----
+🗺️ Google Maps Integration
+Create a Google Cloud project
 
-## License
+Enable:
 
-This project is licensed under the MIT License.
+* Maps JavaScript API
+
+* Geocoding API
+
+* Enable Billing
+
+* Generate an API Key
+
+* Add the key to .env.local:
+
+env:
+
+VITE_GOOGLE_MAPS_API_KEY=your_api_key_here
+📄 For full steps, see docs/GOOGLE_MAPS_SETUP.md.
